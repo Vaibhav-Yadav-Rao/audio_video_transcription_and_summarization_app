@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceScript AI — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & Variables ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0b0f;
+      --surface:   #111318;
+      --surface2:  #161a24;
+      --border:    #1e2130;
+      --accent:    #6ee7b7;
+      --accent2:   #38bdf8;
+      --accent3:   #a78bfa;
+      --text:      #e8eaf0;
+      --muted:     #6b7280;
+      --error:     #f87171;
+      --success:   #4ade80;
+      --radius:    14px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── Background ────────────────────────────────────────────── */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(110,231,183,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(110,231,183,.025) 1px, transparent 1px);
+      background-size: 56px 56px;
+      z-index: 0;
+    }
+
+    /* ── Navbar ────────────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,11,15,.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .nav-logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+    }
+
+    .nav-logo-text {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+
+    .user-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 6px 14px;
+      font-size: .85rem;
+      color: var(--muted);
+    }
+
+    .nav-logout {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 7px 16px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .nav-logout:hover { border-color: var(--error); color: var(--error); }
+
+    /* ── Main Layout ───────────────────────────────────────────── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    /* ── Page Header ───────────────────────────────────────────── */
+    .page-header { margin-bottom: 40px; animation: fadeUp .5s ease both; }
+
+    .page-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      letter-spacing: -.03em;
+      line-height: 1.15;
+    }
+
+    .page-header h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .page-header p { color: var(--muted); margin-top: 10px; font-size: 1rem; }
+
+    /* ── Cards ─────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      margin-bottom: 24px;
+      animation: fadeUp .5s ease both;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Drop Zone ─────────────────────────────────────────────── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .25s, background .25s;
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(110,231,183,.04);
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      display: block;
+      animation: bob 2.5s ease-in-out infinite;
+    }
+
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+    #fileLabel {
+      font-size: .95rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+      pointer-events: none;
+    }
+
+    .file-hint { font-size: .8rem; color: #3d4459; pointer-events: none; }
+
+    /* ── Upload Button ─────────────────────────────────────────── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 28px;
+      border: none;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #0a0b0f;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: .95rem;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      margin-top: 20px;
+    }
+
+    .btn-primary:hover { opacity: .88; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(110,231,183,.2); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .88rem;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+
+    .btn-secondary:hover { border-color: var(--accent2); background: rgba(56,189,248,.07); }
+
+    .btn-success {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      color: #0a0b0f;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: .9rem;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s;
+    }
+
+    .btn-success:hover { opacity: .88; transform: translateY(-1px); }
+
+    /* ── Progress Bar ──────────────────────────────────────────── */
+    #progressWrap {
+      margin-top: 20px;
+      transition: opacity .3s;
+    }
+
+    #progressWrap.hidden { display: none; }
+
+    .progress-label {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .progress-track {
+      background: var(--surface2);
+      border-radius: 99px;
+      height: 8px;
+      overflow: hidden;
+    }
+
+    #progressBar {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%;
+      transition: width .3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 4px;
+      font-size: .6rem;
+      color: #0a0b0f;
+      font-weight: 700;
+    }
+
+    /* ── Badges ────────────────────────────────────────────────── */
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-size: .78rem;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* ── Textarea ──────────────────────────────────────────────── */
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      line-height: 1.7;
+      resize: vertical;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    textarea:focus {
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(56,189,248,.1);
+    }
+
+    .textarea-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Section visibility ────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ── Loading Overlay ───────────────────────────────────────── */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(10,11,15,.92);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      transition: opacity .3s;
+    }
+
+    #loadingOverlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loader-ring {
+      width: 72px; height: 72px;
+      position: relative;
+    }
+
+    .loader-ring::before, .loader-ring::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3px solid transparent;
+    }
+
+    .loader-ring::before {
+      border-top-color: var(--accent);
+      animation: spin 1s linear infinite;
+    }
+
+    .loader-ring::after {
+      border-bottom-color: var(--accent2);
+      animation: spin 1.5s linear infinite reverse;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-inner {
+      position: absolute;
+      inset: 18px;
+      background: var(--surface);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    #loaderPhase {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      animation: textPop .4s ease;
+    }
+
+    @keyframes textPop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+
+    .loader-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .loader-dots span {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: dotBounce 1.2s ease-in-out infinite;
+    }
+
+    .loader-dots span:nth-child(2) { animation-delay: .2s; background: var(--accent2); }
+    .loader-dots span:nth-child(3) { animation-delay: .4s; background: var(--accent3); }
+
+    @keyframes dotBounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-10px); } }
+
+    #loaderSteps {
+      font-size: .82rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ── Toast ─────────────────────────────────────────────────── */
+    #toastContainer {
+      position: fixed;
+      top: 80px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 18px;
+      font-size: .88rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 240px;
+      max-width: 340px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+      transform: translateX(120%);
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+    }
+
+    .toast.show { transform: translateX(0); }
+
+    .toast-success { border-color: rgba(74,222,128,.3); }
+    .toast-error   { border-color: rgba(248,113,113,.3); }
+    .toast-info    { border-color: rgba(56,189,248,.3);  }
+
+    .toast-icon { font-size: 1rem; }
+    .toast-success .toast-icon { color: var(--success); }
+    .toast-error   .toast-icon { color: var(--error);   }
+    .toast-info    .toast-icon { color: var(--accent2);  }
+
+    /* ── Animations ────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card:nth-child(2) { animation-delay: .1s; }
+    .card:nth-child(3) { animation-delay: .2s; }
+    .card:nth-child(4) { animation-delay: .3s; }
+
+    /* ── Responsive ────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      nav { padding: 0 16px; }
+      main { padding: 32px 16px 60px; }
+      .card { padding: 24px 20px; }
+      .user-pill { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="hidden">
+    <div class="loader-ring">
+      <div class="loader-inner">🎙</div>
+    </div>
+    <div id="loaderPhase">Preparing…</div>
+    <div class="loader-dots">
+      <span></span><span></span><span></span>
+    </div>
+    <div id="loaderSteps">This may take a minute for longer files</div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <!-- Navbar -->
+  <nav>
+    <div class="nav-logo">
+      <div class="nav-logo-icon">🎙</div>
+      <span class="nav-logo-text">VoiceScript AI</span>
+    </div>
+    <div class="nav-right">
+      <span class="user-pill">{{ user }}</span>
+      <a href="/logout" class="nav-logout">Sign out</a>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Header -->
+    <div class="page-header">
+      <h1>Transcribe & <span>Summarize</span></h1>
+      <p>Upload an audio or video file — our AI will transcribe and summarize it for you.</p>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="card">
+      <div class="card-title">📂 Upload File</div>
+
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".mp3,.wav,.m4a,.ogg,.flac,.mp4,.mkv,.mov,.avi,.webm">
+        <span class="drop-icon">🎵</span>
+        <span id="fileLabel">Drag & drop your file here, or click to browse</span>
+        <span class="file-hint">Supported: MP3, WAV, M4A, OGG, FLAC, MP4, MKV, MOV, AVI, WEBM · Max 500 MB</span>
+      </div>
+
+      <button class="btn-primary" onclick="uploadFile()">
+        ⚡ Upload &amp; Transcribe
+      </button>
+
+      <!-- Progress -->
+      <div id="progressWrap" class="hidden">
+        <div class="progress-label">Uploading file…</div>
+        <div class="progress-track">
+          <div id="progressBar">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transcript Result -->
+    <div id="resultSection" class="card hidden">
+      <div class="card-title">📝 Transcript</div>
+
+      <div class="badge-row">
+        <span class="badge">⏱ <span id="durationBadge">—</span></span>
+        <span class="badge">📄 <span id="filenameBadge">—</span></span>
+        <span class="badge">🔤 <span id="wordCountBadge">—</span></span>
+      </div>
+
+      <textarea id="transcriptArea" rows="14" placeholder="Your transcript will appear here…"></textarea>
+
+      <div class="textarea-actions">
+        <button class="btn-success" onclick="summarizeText()">✨ Summarize</button>
+        <button class="btn-secondary" onclick="downloadTranscript()">⬇ Download</button>
+        <button class="btn-secondary" onclick="copyToClipboard('transcriptArea')">⎘ Copy</button>
+      </div>
+    </div>
+
+    <!-- Summary Result -->
+    <div id="summarySection" class="card hidden">
+      <div class="card-title">💡 Summary</div>
+      <textarea id="summaryArea" rows="10" placeholder="AI summary will appear here…"></textarea>
+      <div class="textarea-actions">
+        <button class="btn-secondary" onclick="downloadSummary()">⬇ Download</button>
+        <button class="btn-secondary" onclick="copyToClipboard('summaryArea')">⎘ Copy</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
